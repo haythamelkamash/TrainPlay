@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrainPlay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f0f1a;color:#fff;min-height:100vh}
+.hidden{display:none!important}
+.screen{min-height:100vh;padding:20px}
+.btn{padding:10px 22px;border-radius:10px;border:none;cursor:pointer;font-size:0.95rem;font-weight:600;transition:all .18s}
+.btn-primary{background:#6c63ff;color:#fff}.btn-primary:hover{background:#5a52e0}
+.btn-secondary{background:#2a2a3e;color:#fff;border:1px solid #444}.btn-secondary:hover{background:#333350}
+.btn-danger{background:#e74c3c;color:#fff}.btn-danger:hover{background:#c0392b}
+.btn-success{background:#27ae60;color:#fff}.btn-success:hover{background:#219a52}
+.btn-outline{background:transparent;color:#6c63ff;border:2px solid #6c63ff}.btn-outline:hover{background:#6c63ff;color:#fff}
+.btn-sm{padding:6px 14px;font-size:0.82rem}
+.input{width:100%;padding:10px 14px;border:1.5px solid #333;border-radius:9px;font-size:0.95rem;outline:none;background:#1e1e30;color:#fff;transition:border .2s}
+.input:focus{border-color:#6c63ff}
+.input::placeholder{color:#666}
+textarea.input{resize:vertical;min-height:56px}
+.card{background:#1a1a2e;border-radius:14px;padding:20px;border:1px solid #2a2a3e}
+
+#host-home{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center}
+.logo{font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,#6c63ff,#3ecfcf);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+#library{max-width:780px;margin:0 auto}
+.lib-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.activity-card{background:#1a1a2e;border:1px solid #2a2a3e;border-radius:12px;padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.activity-card:hover{border-color:#6c63ff55}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600}
+.badge-q{background:#6c63ff22;color:#9d97ff}
+
+#builder{max-width:780px;margin:0 auto}
+.builder-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.q-card{background:#1a1a2e;border-radius:12px;padding:18px;margin-bottom:14px;border:1.5px solid #2a2a3e}
+.q-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.q-num{background:#6c63ff;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;flex-shrink:0}
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.opt-row{display:flex;align-items:center;gap:7px}
+.opt-lbl{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0}
+.ol-a{background:#1a3a5c;color:#5aa8e0}.ol-b{background:#1a3d2a;color:#4ec07a}
+.ol-c{background:#3d2e0a;color:#e0a030}.ol-d{background:#2d1a3d;color:#b07ae0}
+.correct-pick{display:flex;align-items:center;gap:5px;font-size:0.78rem;color:#888;margin-top:3px}
+.correct-pick input{accent-color:#27ae60}
+.timer-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.timer-row label{font-size:0.82rem;color:#888}
+.timer-sel{padding:5px 10px;border:1.5px solid #333;border-radius:8px;font-size:0.82rem;background:#1e1e30;color:#fff;outline:none}
+.add-q-btn{width:100%;padding:13px;background:transparent;border:2px dashed #444;border-radius:12px;color:#888;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all .2s}
+.add-q-btn:hover{border-color:#6c63ff;color:#6c63ff}
+.builder-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+
+#qr-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px}
+.qr-wrap{background:#fff;padding:18px;border-radius:16px;display:inline-block}
+.join-code{font-size:2.8rem;font-weight:900;letter-spacing:8px;color:#6c63ff}
+
+#live-screen{max-width:720px;margin:0 auto}
+.live-bar{display:flex;justify-content:space-between;align-items:center;background:#1a1a2e;padding:14px 18px;border-radius:12px;margin-bottom:18px}
+.timer-ring{width:60px;height:60px;border-radius:50%;background:#6c63ff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;transition:background .3s;flex-shrink:0;position:relative}
+.timer-ring.urgent{background:#e74c3c;animation:tpulse .5s infinite alternate}
+@keyframes tpulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+.live-q{font-size:1.4rem;font-weight:700;text-align:center;margin:18px 10px;line-height:1.4}
+.live-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:680px;margin:0 auto}
+.live-opt{padding:18px 14px;border-radius:12px;font-size:0.95rem;font-weight:600;text-align:center;border:none;color:#fff}
+.lo-a{background:#2980b9}.lo-b{background:#27ae60}.lo-c{background:#e67e22}.lo-d{background:#8e44ad}
+
+#results-screen{max-width:720px;margin:0 auto}
+.correct-banner{display:inline-block;background:#27ae6022;color:#2ecc71;border:1px solid #27ae6066;padding:8px 22px;border-radius:30px;font-size:0.95rem;font-weight:700;margin:10px 0}
+.res-row{display:flex;align-items:center;gap:10px;margin:9px 0}
+.res-lbl{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0}
+.bar-wrap{flex:1;background:#ffffff15;border-radius:6px;height:30px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width 1s ease;display:flex;align-items:center;padding:0 8px;font-size:0.8rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.bf-a{background:#2980b9}.bf-b{background:#27ae60}.bf-c{background:#e67e22}.bf-d{background:#8e44ad}
+.tabs{display:flex;gap:4px;background:#1a1a2e;border-radius:10px;padding:4px;margin-bottom:16px}
+.tab{flex:1;padding:8px;text-align:center;border-radius:7px;font-size:0.88rem;font-weight:600;cursor:pointer;color:#888;transition:all .2s}
+.tab.active{background:#6c63ff;color:#fff}
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:8px;background:#1a1a2e;border:1px solid #2a2a3e;transition:all .4s}
+.lb-row.lb-1{border-color:#f1c40f66;background:#f1c40f08}
+.lb-row.lb-2{border-color:#aaa5;background:#aaa1}
+.lb-row.lb-3{border-color:#cd7f3266;background:#cd7f3208}
+.lb-rank{font-size:1.3rem;width:36px;text-align:center;flex-shrink:0}
+.lb-name{flex:1;font-weight:600;font-size:0.95rem}
+.lb-score{font-weight:700;font-size:1rem;color:#9d97ff}
+.lb-bar-wrap{width:80px;background:#ffffff10;border-radius:4px;height:6px;overflow:hidden}
+.lb-bar-fill{height:100%;background:#6c63ff;border-radius:4px;transition:width .8s ease}
+.progress-dots{display:flex;gap:5px;justify-content:center;margin-top:6px}
+.pdot{width:10px;height:10px;border-radius:50%;background:#333;transition:background .3s}
+.pdot.correct{background:#27ae60}.pdot.wrong{background:#e74c3c}.pdot.pending{background:#333;border:1px dashed #555}
+
+#trainee-home{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center}
+#trainee-waiting{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+#trainee-answer{max-width:480px;margin:0 auto}
+#trainee-result{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+#trainee-finish{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.t-opt{width:100%;padding:20px;border-radius:12px;font-size:1rem;font-weight:700;border:none;cursor:pointer;margin:7px 0;color:#fff;transition:transform .12s,opacity .2s}
+.t-opt:hover:not(:disabled){transform:scale(1.02)}
+.t-opt:disabled{opacity:.45;cursor:default;transform:none}
+.spinner{width:44px;height:44px;border:4px solid #ffffff20;border-top:4px solid #6c63ff;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.name-badge{background:#6c63ff22;color:#9d97ff;border:1px solid #6c63ff44;padding:5px 16px;border-radius:20px;font-weight:600;font-size:0.9rem;display:inline-block}
+.join-row{display:flex;gap:8px;max-width:340px;width:100%}
+.join-row .input{background:#1e1e30}
+.view-toggle{position:fixed;top:14px;right:14px;background:#1a1a2e;color:#aaa;border:1px solid #333;padding:6px 14px;border-radius:20px;font-size:0.78rem;cursor:pointer;z-index:9999}
+#finish-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
+
+/* Speed bar */
+.speed-bar-wrap{width:100%;height:8px;background:#ffffff15;border-radius:4px;margin-top:8px;overflow:hidden}
+.speed-bar-fill{height:100%;border-radius:4px;transition:width .1s linear}
+
+/* Score HUD */
+.score-hud{background:#1a1a2e;border:1px solid #2a2a3e;border-radius:12px;padding:12px 16px;margin:0 12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.score-hud-pts{font-size:1.4rem;font-weight:900;color:#9d97ff}
+.streak-badge{font-size:0.78rem;color:#f39c12;font-weight:600}
+
+/* Points popup */
+.pts-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#6c63ff;color:#fff;padding:16px 32px;border-radius:16px;font-size:2rem;font-weight:900;z-index:9998;pointer-events:none;text-align:center;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.pts-popup.show{transform:translate(-50%,-50%) scale(1)}
+.pts-popup.hide{opacity:0;transform:translate(-50%,-80%) scale(.8)}
+
+/* PODIUM */
+#podium-screen{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;background:#0f0f1a;overflow:hidden;padding-bottom:0}
+.podium-stage{display:flex;align-items:flex-end;justify-content:center;gap:0;margin-top:20px;width:100%;max-width:480px}
+.podium-col{display:flex;flex-direction:column;align-items:center;flex:1}
+.podium-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;margin-bottom:8px;border:3px solid transparent;transform:translateY(60px);opacity:0;transition:transform .7s cubic-bezier(.34,1.3,.64,1),opacity .5s}
+.podium-avatar.show{transform:translateY(0);opacity:1}
+.podium-name{font-size:0.82rem;font-weight:700;margin-bottom:4px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podium-pts{font-size:0.75rem;color:#aaa;margin-bottom:6px}
+.podium-block{width:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;border-radius:12px 12px 0 0;transform:scaleY(0);transform-origin:bottom;transition:transform .8s cubic-bezier(.34,1.1,.64,1)}
+.podium-block.show{transform:scaleY(1)}
+.p1-block{height:160px;background:linear-gradient(180deg,#f1c40f,#e67e22)}
+.p2-block{height:120px;background:linear-gradient(180deg,#bdc3c7,#95a5a6)}
+.p3-block{height:90px;background:linear-gradient(180deg,#cd7f32,#a04000)}
+.p1-av{border-color:#f1c40f;background:#f1c40f22;color:#f1c40f}
+.p2-av{border-color:#bdc3c7;background:#bdc3c722;color:#bdc3c7}
+.p3-av{border-color:#cd7f32;background:#cd7f3222;color:#cd7f32}
+.confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9990}
+.podium-bottom{background:#1a1a2e;width:100%;padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:0}
+
+/* Trainee final */
+.t-final-card{background:#1a1a2e;border:1px solid #2a2a3e;border-radius:16px;padding:22px;max-width:360px;width:90%;text-align:center}
+.t-final-pts{font-size:2.8rem;font-weight:900;color:#9d97ff;margin:8px 0}
+.t-answer-history{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.ah-pill{padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600}
+.ah-correct{background:#27ae6022;color:#2ecc71;border:1px solid #27ae6044}
+.ah-wrong{background:#e74c3c22;color:#e74c3c;border:1px solid #e74c3c44}
+</style>
+</head>
+<body>
+<button class="view-toggle" id="viewToggle" onclick="toggleView()">Trainee View</button>
+<div class="pts-popup" id="ptsPopup"></div>
+<canvas class="confetti-canvas hidden" id="confettiCanvas"></canvas>
+
+<!-- HOST HOME -->
+<div id="host-home" class="screen">
+  <div class="logo">TrainPlay</div>
+  <p style="color:#888;font-size:0.95rem">Live MCQ activities for training sessions</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+    <button class="btn btn-primary" style="font-size:1rem;padding:12px 32px" onclick="showBuilder(null)">+ New Activity</button>
+    <button class="btn btn-secondary" style="font-size:1rem;padding:12px 32px" onclick="showLibrary()">My Activities</button>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div id="library" class="screen hidden">
+  <div class="lib-header"><h2>My Activities</h2>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="showHome()">Home</button>
+      <button class="btn btn-primary btn-sm" onclick="showBuilder(null)">+ New</button>
+    </div>
+  </div>
+  <div id="libraryList"></div>
+</div>
+
+<!-- BUILDER -->
+<div id="builder" class="screen hidden">
+  <div class="builder-topbar">
+    <h2 id="builderHeading">New Activity</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" onclick="showLibrary()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveActivity()">Save Activity</button>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <label style="font-size:0.8rem;color:#888;font-weight:600;display:block;margin-bottom:6px">ACTIVITY TITLE</label>
+    <input class="input" id="actTitle" placeholder="e.g. Well Control — Module 1 Quiz">
+  </div>
+  <div id="questionsList"></div>
+  <button class="add-q-btn" onclick="addQuestion()">+ Add Question</button>
+  <div class="builder-footer">
+    <button class="btn btn-outline" onclick="saveAndLaunch()">Save &amp; Launch Session</button>
+  </div>
+</div>
+
+<!-- QR -->
+<div id="qr-screen" class="screen hidden">
+  <div style="color:#888;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase">Trainees — join now</div>
+  <div class="join-code" id="qrCode">------</div>
+  <div class="qr-wrap"><div id="qrcode"></div></div>
+  <div style="color:#888;font-size:0.88rem">Scan the QR code or enter the code above</div>
+  <div style="color:#555;font-size:0.72rem;max-width:320px;word-break:break-all" id="qrUrlDisplay"></div>
+  <div id="qrJoinedList" style="color:#9d97ff;font-size:0.85rem;min-height:20px"></div>
+  <div style="display:flex;gap:12px;margin-top:6px">
+    <button class="btn btn-secondary" id="qrBackBtn" onclick="qrBack()">Back</button>
+    <button class="btn btn-success" id="qrStartBtn" onclick="launchQuestion()">Start Question</button>
+  </div>
+</div>
+
+<!-- LIVE -->
+<div id="live-screen" class="screen hidden">
+  <div class="live-bar">
+    <div>
+      <div style="font-size:0.78rem;color:#888">Q <span id="liveQNum"></span> of <span id="liveTotalQ"></span> · <span id="liveTitle" style="color:#9d97ff"></span></div>
+      <div style="font-size:0.75rem;color:#555;margin-top:2px"><span id="liveJoinedCount">0</span> participants</div>
+    </div>
+    <div class="timer-ring" id="timerRing">30</div>
+  </div>
+  <div class="live-q" id="liveQText"></div>
+  <div class="live-opts" id="liveOpts"></div>
+  <div style="text-align:center;color:#888;margin-top:14px;font-size:0.9rem"><span id="respCount">0</span> responses</div>
+  <div style="display:flex;justify-content:center;gap:12px;margin-top:20px">
+    <button class="btn btn-danger" onclick="endQuestion()">End &amp; Show Results</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-screen" class="screen hidden">
+  <div style="max-width:680px;margin:0 auto;padding-top:10px">
+    <div style="text-align:center;font-size:1.2rem;font-weight:700;margin-bottom:10px" id="resActivityTitle"></div>
+    <div class="tabs">
+      <div class="tab active" id="tabAnswers" onclick="switchTab('answers')">Answers</div>
+      <div class="tab" id="tabLeaderboard" onclick="switchTab('leaderboard')">Leaderboard</div>
+    </div>
+    <div id="panelAnswers">
+      <div style="text-align:center;color:#aaa;font-size:0.9rem;margin-bottom:6px" id="resQText"></div>
+      <div style="text-align:center"><div class="correct-banner" id="correctBanner"></div></div>
+      <div id="resBars" style="margin:14px 0"></div>
+      <div style="text-align:center;color:#888;font-size:0.82rem" id="resTotalVotes"></div>
+    </div>
+    <div id="panelLeaderboard" class="hidden"><div id="lbList"></div></div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-top:20px;flex-wrap:wrap">
+      <button class="btn btn-outline" id="nextQBtn" onclick="nextQuestion()">Next Question</button>
+      <button class="btn btn-primary" id="endSessionBtn" onclick="triggerPodium()">Finish Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- PODIUM -->
+<div id="podium-screen" class="screen hidden" style="justify-content:flex-start;align-items:center;padding:0">
+  <div style="text-align:center;padding:24px 20px 10px;width:100%">
+    <div class="logo" style="font-size:2rem">TrainPlay</div>
+    <div style="font-size:1.3rem;font-weight:700;margin-top:6px" id="podiumActivityTitle"></div>
+  </div>
+  <div class="podium-stage" id="podiumStage">
+    <!-- built by JS -->
+  </div>
+  <div class="podium-bottom">
+    <div id="podiumRestList" style="width:100%;max-width:460px"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-secondary" onclick="showLibrary()">My Activities</button>
+      <button class="btn btn-primary" onclick="showHome()">Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRAINEE HOME -->
+<div id="trainee-home" class="screen hidden">
+  <div class="logo">TrainPlay</div>
+  <h2 style="font-size:1.3rem">Join a Session</h2>
+  <div class="join-row"><input class="input" id="traineeName" placeholder="Your name" maxlength="28"></div>
+  <div class="join-row">
+    <input class="input" id="traineeCode" placeholder="Session code" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:700">
+    <button class="btn btn-primary" onclick="traineeJoin()">Join</button>
+  </div>
+  <div id="joinErr" style="color:#e74c3c;font-size:0.82rem;min-height:18px"></div>
+</div>
+
+<!-- TRAINEE WAITING -->
+<div id="trainee-waiting" class="screen hidden">
+  <div class="spinner"></div>
+  <div style="color:#aaa">Waiting for the host to start...</div>
+  <div class="name-badge" id="tWaitName"></div>
+  <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="traineeLeave()">Leave</button>
+</div>
+
+<!-- TRAINEE ANSWER -->
+<div id="trainee-answer" class="screen hidden">
+  <div style="text-align:center;padding:12px 0 2px">
+    <div style="color:#888;font-size:0.82rem">Question <span id="tQNum"></span></div>
+    <div class="name-badge" style="margin-top:6px" id="tNameBadge"></div>
+  </div>
+  <div class="score-hud">
+    <div>
+      <div style="font-size:0.72rem;color:#666;margin-bottom:1px">Score</div>
+      <div class="score-hud-pts" id="tHudScore">0 pts</div>
+      <div class="streak-badge" id="tHudStreak"></div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:0.78rem;color:#888" id="tHudRank">Rank —</div>
+      <div class="progress-dots" id="tProgressDots" style="justify-content:flex-end;margin-top:6px"></div>
+    </div>
+  </div>
+  <!-- speed bar -->
+  <div style="padding:0 12px 6px">
+    <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#666;margin-bottom:3px">
+      <span>Answer faster = more points</span>
+      <span id="tSpeedLabel" style="color:#f39c12;font-weight:600"></span>
+    </div>
+    <div class="speed-bar-wrap"><div class="speed-bar-fill" id="tSpeedBar" style="width:100%;background:#27ae60"></div></div>
+  </div>
+  <div class="live-q" id="tQText"></div>
+  <div id="tOpts" style="padding:0 12px 20px"></div>
+</div>
+
+<!-- TRAINEE RESULT -->
+<div id="trainee-result" class="screen hidden">
+  <div style="font-size:3rem" id="tResIcon"></div>
+  <h2 id="tResMsg" style="font-size:1.4rem"></h2>
+  <div style="color:#888;font-size:0.9rem" id="tResCorrect"></div>
+  <div id="tResPoints" style="font-size:1.3rem;font-weight:900;color:#9d97ff;margin-top:2px"></div>
+  <div id="tResBreakdown" style="font-size:0.8rem;color:#666;margin-top:-4px"></div>
+  <div id="tResLbPreview" style="width:90%;max-width:340px;margin-top:14px"></div>
+  <div style="color:#666;font-size:0.8rem;margin-top:10px">Waiting for next question...</div>
+  <div class="spinner" style="margin-top:8px"></div>
+</div>
+
+<!-- TRAINEE FINISH -->
+<div id="trainee-finish" class="screen hidden">
+  <div class="logo" style="font-size:2rem">TrainPlay</div>
+  <div class="t-final-card">
+    <div style="font-size:0.82rem;color:#888;margin-bottom:2px">Final score</div>
+    <div class="t-final-pts" id="tFinalPts">0</div>
+    <div style="font-size:1rem;color:#f1c40f;font-weight:700" id="tFinalRank"></div>
+    <div style="font-size:0.82rem;color:#888;margin-top:4px" id="tFinalCorrect"></div>
+    <div class="t-answer-history" id="tAnswerHistory"></div>
+  </div>
+  <div id="tFinalLb" style="width:90%;max-width:360px"></div>
+  <button class="btn btn-primary" style="margin-top:4px" onclick="traineeLeave()">Back</button>
+</div>
+
+<script>
+const COLORS=['#2980b9','#27ae60','#e67e22','#8e44ad'];
+const LABELS=['A','B','C','D'];
+const BF=['bf-a','bf-b','bf-c','bf-d'];
+const OL=['ol-a','ol-b','ol-c','ol-d'];
+const MEDALS=['🥇','🥈','🥉'];
+const BASE_PTS=100, STREAK_BONUS=50, MAX_SPEED_BONUS=100;
+
+function loadActs(){try{return JSON.parse(localStorage.getItem('tp_acts')||'[]')}catch{return[]}}
+function saveActs(a){try{localStorage.setItem('tp_acts',JSON.stringify(a))}catch{}}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function genCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+let participants={};
+let S={
+  mode:'host',editingId:null,sessionCode:'',sessionActivity:null,
+  currentQ:0,timerVal:30,timerInt:null,pollInt:null,speedInt:null,
+  qStartTime:0,votes:{},sessionActive:false,sessionDone:false,
+  trainee:{name:'',code:''},tCurrentQ:-1,tQStartTime:0,tSpeedBarInt:null
+};
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden')}
+function showHome(){showScreen('host-home')}
+
+function toggleView(){
+  S.mode=S.mode==='host'?'trainee':'host';
+  document.getElementById('viewToggle').textContent=S.mode==='host'?'Trainee View':'Host View';
+  if(S.mode==='trainee'){if(S.sessionActive)showTraineeAnswer(S.currentQ);else showScreen('trainee-home')}
+  else{if(S.sessionActive)showScreen('live-screen');else showScreen('host-home')}
+}
+
+// ── Scoring ───────────────────────────────────────────────
+function calcSpeedBonus(elapsed,timer){
+  const ratio=Math.max(0,1-(elapsed/timer));
+  return Math.round(MAX_SPEED_BONUS*ratio);
+}
+function getLeaderboard(){
+  return Object.values(participants).sort((a,b)=>b.score-a.score).map((p,i)=>({...p,rank:i+1}));
+}
+function getTraineeRank(name){const e=getLeaderboard().find(p=>p.name===name);return e?e.rank:null}
+function renderLeaderboard(containerId,highlight,max=10){
+  const lb=getLeaderboard().slice(0,max);
+  const el=document.getElementById(containerId);if(!el)return;
+  if(!lb.length){el.innerHTML='<div style="text-align:center;color:#666;padding:16px">No participants yet</div>';return}
+  const top=lb[0].score||1;
+  el.innerHTML=lb.map((p,i)=>{
+    const medal=i<3?MEDALS[i]:`<span style="color:#555;font-size:0.9rem">${i+1}</span>`;
+    const hl=p.name===highlight;
+    return`<div class="lb-row lb-${i+1}" style="${hl?'border-color:#6c63ffaa;background:#6c63ff12;':''}">
+      <div class="lb-rank">${medal}</div>
+      <div style="flex:1;min-width:0">
+        <div class="lb-name">${esc(p.name)}${p.streak>=2?` <span style="color:#f39c12;font-size:0.75rem">🔥${p.streak}</span>`:''}</div>
+        <div style="font-size:0.72rem;color:#555">${p.answers.filter(a=>a.correct).length}/${p.answers.length} correct</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="lb-score">${p.score}</div>
+        <div class="lb-bar-wrap" style="margin-top:4px"><div class="lb-bar-fill" style="width:${Math.round(p.score/top*100)}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderDots(name,cid){
+  const p=participants[name];const total=S.sessionActivity?S.sessionActivity.questions.length:0;
+  const el=document.getElementById(cid);if(!el||!p)return;
+  el.innerHTML=Array.from({length:total},(_,i)=>{
+    const a=p.answers[i];const cls=i<p.answers.length?(a.correct?'correct':'wrong'):'pending';
+    return`<div class="pdot ${cls}"></div>`;
+  }).join('');
+}
+
+// ── Library ───────────────────────────────────────────────
+function showLibrary(){
+  const acts=loadActs();
+  document.getElementById('libraryList').innerHTML=acts.length?acts.map(a=>`
+    <div class="activity-card">
+      <div>
+        <div style="font-weight:600;margin-bottom:4px">${esc(a.title)}</div>
+        <span class="badge badge-q">${a.questions.length} Q${a.questions.length!==1?'s':''}</span>
+        <span style="color:#555;font-size:0.76rem;margin-left:8px">${new Date(a.savedAt).toLocaleDateString()}</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-secondary btn-sm" onclick="showBuilder('${a.id}')">Edit</button>
+        <button class="btn btn-success btn-sm" onclick="launchActivity('${a.id}')">Launch</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAct('${a.id}')">Delete</button>
+      </div>
+    </div>`).join(''):'<div style="text-align:center;color:#666;padding:40px 0">No saved activities yet.</div>';
+  showScreen('library');
+}
+function deleteAct(id){if(!confirm('Delete?'))return;saveActs(loadActs().filter(a=>a.id!==id));showLibrary()}
+function launchActivity(id){
+  const act=loadActs().find(a=>a.id===id);if(!act)return;
+  participants={};S.sessionActivity=act;S.sessionCode=genCode();S.currentQ=0;
+  S.votes={};S.sessionActive=true;S.sessionDone=false;
+  showQR(false);
+}
+
+// ── Builder ───────────────────────────────────────────────
+let bQs=[];
+function showBuilder(id){
+  bQs=[];S.editingId=id;document.getElementById('questionsList').innerHTML='';
+  if(id){
+    const act=loadActs().find(a=>a.id===id);
+    if(act){document.getElementById('actTitle').value=act.title;document.getElementById('builderHeading').textContent='Edit Activity';bQs=act.questions.map(q=>({...q,options:[...q.options]}));bQs.forEach((_,i)=>renderQCard(i))}
+  }else{document.getElementById('actTitle').value='';document.getElementById('builderHeading').textContent='New Activity';addQuestion()}
+  showScreen('builder');
+}
+function addQuestion(){const i=bQs.length;bQs.push({text:'',options:['','','',''],correct:0,timer:30});renderQCard(i)}
+function renderQCard(idx){
+  const q=bQs[idx];const list=document.getElementById('questionsList');
+  const el=document.createElement('div');el.className='q-card';el.id='qc-'+idx;
+  el.innerHTML=`<div class="q-header">
+    <div style="display:flex;align-items:center;gap:9px"><div class="q-num">${idx+1}</div><span style="font-weight:600;font-size:0.86rem;color:#ccc">Question ${idx+1}</span></div>
+    <button onclick="removeQ(${idx})" style="background:none;border:none;cursor:pointer;color:#e74c3c;font-size:1rem;padding:4px 6px">✕</button>
+  </div>
+  <textarea class="input" placeholder="Type your question..." oninput="bQs[${idx}].text=this.value" rows="2">${esc(q.text)}</textarea>
+  <div class="opts-grid">${[0,1,2,3].map(i=>`
+    <div>
+      <div class="opt-row"><div class="opt-lbl ${OL[i]}">${LABELS[i]}</div>
+      <input class="input" style="padding:7px 10px;font-size:0.86rem" placeholder="Option ${LABELS[i]}" value="${esc(q.options[i])}" oninput="bQs[${idx}].options[${i}]=this.value"></div>
+      <div class="correct-pick"><input type="radio" name="cor-${idx}" value="${i}" ${q.correct===i?'checked':''} onchange="bQs[${idx}].correct=${i}"><label>Correct</label></div>
+    </div>`).join('')}</div>
+  <div class="timer-row"><label>Timer:</label>
+    <select class="timer-sel" onchange="bQs[${idx}].timer=parseInt(this.value)">
+      ${[10,15,20,30,45,60].map(t=>`<option value="${t}"${q.timer===t?' selected':''}>${t}s</option>`).join('')}
+    </select></div>`;
+  list.appendChild(el);
+}
+function removeQ(idx){if(bQs.length<=1)return;bQs.splice(idx,1);document.getElementById('questionsList').innerHTML='';bQs.forEach((_,i)=>renderQCard(i))}
+function collectAct(){
+  const title=document.getElementById('actTitle').value.trim();
+  if(!title){alert('Please enter an activity title.');return null}
+  if(!bQs.every(q=>q.text.trim()&&q.options.filter(o=>o.trim()).length>=2)){alert('Each question needs text and at least 2 options.');return null}
+  return{id:S.editingId||genId(),title,questions:bQs.map(q=>({...q,options:[...q.options]})),savedAt:Date.now()};
+}
+function saveActivity(){const act=collectAct();if(!act)return;const acts=loadActs();const i=acts.findIndex(a=>a.id===act.id);if(i>=0)acts[i]=act;else acts.push(act);saveActs(acts);S.editingId=act.id;alert('Saved!');showLibrary()}
+function saveAndLaunch(){const act=collectAct();if(!act)return;const acts=loadActs();const i=acts.findIndex(a=>a.id===act.id);if(i>=0)acts[i]=act;else acts.push(act);saveActs(acts);launchActivity(act.id)}
+
+// ── QR ────────────────────────────────────────────────────
+function showQR(preview){
+  const code=S.sessionCode;
+  document.getElementById('qrCode').textContent=code;
+  document.getElementById('qrcode').innerHTML='';
+  const qrText=`TrainPlay Session Code: ${code}\n\nOpen the TrainPlay app on your device and enter this code to join the session.`;
+  document.getElementById('qrUrlDisplay').textContent='Scan to get the session code, then enter it in the app.';
+  new QRCode(document.getElementById('qrcode'),{text:qrText,width:200,height:200,colorDark:'#1a1a2e',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  document.getElementById('qrStartBtn').classList.toggle('hidden',preview);
+  document.getElementById('qrBackBtn').textContent=preview?'Back':'Back';
+  updateJoinedList();showScreen('qr-screen');
+}
+function updateJoinedList(){
+  const names=Object.keys(participants);
+  const el=document.getElementById('qrJoinedList');
+  if(el)el.textContent=names.length?`${names.length} joined: ${names.slice(0,5).join(', ')}${names.length>5?'…':''}` :'No one joined yet';
+}
+function qrBack(){if(S.sessionActive)showScreen('live-screen');else showScreen('builder')}
+
+// ── Live ──────────────────────────────────────────────────
+function launchQuestion(){
+  const q=S.sessionActivity.questions[S.currentQ];
+  S.votes={};S.qStartTime=Date.now();
+  document.getElementById('liveQNum').textContent=S.currentQ+1;
+  document.getElementById('liveTotalQ').textContent=S.sessionActivity.questions.length;
+  document.getElementById('liveTitle').textContent=S.sessionActivity.title;
+  document.getElementById('liveJoinedCount').textContent=Object.keys(participants).length;
+  document.getElementById('liveQText').textContent=q.text;
+  document.getElementById('respCount').textContent='0';
+  const opts=document.getElementById('liveOpts');opts.innerHTML='';
+  q.options.forEach((o,i)=>{if(!o.trim())return;const d=document.createElement('div');d.className=`live-opt lo-${LABELS[i].toLowerCase()}`;d.textContent=`${LABELS[i]}: ${o}`;opts.appendChild(d)});
+  clearInterval(S.timerInt);S.timerVal=q.timer;tick();S.timerInt=setInterval(tick,1000);
+  clearInterval(S.pollInt);S.pollInt=setInterval(()=>{const el=document.getElementById('respCount');if(el)el.textContent=Object.keys(S.votes).length},400);
+  showScreen('live-screen');
+}
+function tick(){
+  const el=document.getElementById('timerRing');
+  if(el){el.textContent=Math.max(0,S.timerVal);el.className='timer-ring'+(S.timerVal<=5?' urgent':'')}
+  if(S.timerVal<=0){clearInterval(S.timerInt);endQuestion()}
+  S.timerVal--;
+}
+function endQuestion(){
+  clearInterval(S.timerInt);clearInterval(S.pollInt);
+  simulateVotes();applyVotesToScores();showResults();
+}
+function simulateVotes(){
+  const q=S.sessionActivity.questions[S.currentQ];
+  const names=['Khalid','Sara','Ahmed','Nora','Omar','Lina','Tariq','Reem','Fahad','Maha'];
+  const valid=q.options.map((o,i)=>o.trim()?i:-1).filter(i=>i>=0);
+  const timer=q.timer;
+  names.forEach(n=>{
+    if(!participants[n])participants[n]={name:n,score:0,streak:0,answers:[],voteTimes:{}};
+    if(!S.votes[n]){
+      const r=Math.random();
+      S.votes[n]=r<0.6?q.correct:valid[Math.floor(Math.random()*valid.length)];
+      // random elapsed time 1..timer
+      if(!participants[n].voteTimes)participants[n].voteTimes={};
+      participants[n].voteTimes[S.currentQ]=1+Math.random()*(timer-1);
+    }
+  });
+}
+function applyVotesToScores(){
+  const q=S.sessionActivity.questions[S.currentQ];
+  Object.entries(S.votes).forEach(([name,optIdx])=>{
+    if(!participants[name])participants[name]={name,score:0,streak:0,answers:[],voteTimes:{}};
+    const p=participants[name];
+    if(p.answers.length>S.currentQ)return;
+    const correct=optIdx===q.correct;
+    let pts=0,speedPts=0,streakPts=0;
+    if(correct){
+      p.streak=(p.streak||0)+1;
+      const elapsed=p.voteTimes&&p.voteTimes[S.currentQ]!=null?p.voteTimes[S.currentQ]:q.timer;
+      speedPts=calcSpeedBonus(elapsed,q.timer);
+      streakPts=p.streak>=2?STREAK_BONUS:0;
+      pts=BASE_PTS+speedPts+streakPts;
+      p.score+=pts;
+    }else{p.streak=0}
+    p.answers.push({correct,points:pts,speedPts,streakPts,option:optIdx});
+  });
+}
+
+// ── Results ───────────────────────────────────────────────
+let activeTab='answers';
+function switchTab(tab){
+  activeTab=tab;
+  document.getElementById('tabAnswers').className='tab'+(tab==='answers'?' active':'');
+  document.getElementById('tabLeaderboard').className='tab'+(tab==='leaderboard'?' active':'');
+  document.getElementById('panelAnswers').classList.toggle('hidden',tab!=='answers');
+  document.getElementById('panelLeaderboard').classList.toggle('hidden',tab!=='leaderboard');
+  if(tab==='leaderboard')renderLeaderboard('lbList',null);
+}
+function showResults(){
+  const q=S.sessionActivity.questions[S.currentQ];
+  const counts=[0,0,0,0];
+  Object.values(S.votes).forEach(v=>counts[v]=(counts[v]||0)+1);
+  const total=Object.values(S.votes).length;
+  document.getElementById('resActivityTitle').textContent=S.sessionActivity.title;
+  document.getElementById('resQText').textContent=q.text;
+  document.getElementById('correctBanner').textContent=`Correct: ${LABELS[q.correct]} — ${q.options[q.correct]}`;
+  const bars=document.getElementById('resBars');bars.innerHTML='';
+  q.options.forEach((o,i)=>{
+    if(!o.trim())return;
+    const pct=total?Math.round(counts[i]/total*100):0;
+    bars.innerHTML+=`<div class="res-row">
+      <div class="res-lbl" style="background:${COLORS[i]}22;color:${COLORS[i]}">${LABELS[i]}</div>
+      <div class="bar-wrap"><div class="bar-fill ${BF[i]}" style="width:${pct}%;${i===q.correct?'box-shadow:0 0 0 2px #27ae60 inset':''}">
+        ${pct>12?esc(o):''}</div></div>
+      <div style="width:38px;text-align:right;font-size:0.8rem;color:#888">${counts[i]}</div>
+    </div>`;
+  });
+  document.getElementById('resTotalVotes').textContent=`${total} response${total!==1?'s':''} received`;
+  const isLast=S.currentQ>=S.sessionActivity.questions.length-1;
+  document.getElementById('nextQBtn').classList.toggle('hidden',isLast);
+  switchTab('answers');showScreen('results-screen');
+  setTimeout(()=>switchTab('leaderboard'),2000);
+}
+function nextQuestion(){S.currentQ++;if(S.currentQ<S.sessionActivity.questions.length)showQR(false);else triggerPodium()}
+
+// ── Podium ────────────────────────────────────────────────
+function triggerPodium(){
+  clearInterval(S.timerInt);clearInterval(S.pollInt);
+  S.sessionActive=false;S.sessionDone=true;
+  const lb=getLeaderboard();
+  document.getElementById('podiumActivityTitle').textContent=S.sessionActivity.title;
+
+  // Build podium: positions [2nd, 1st, 3rd]
+  const slots=[lb[1],lb[0],lb[2]]; // visual left=2nd, center=1st, right=3rd
+  const classes=['p2','p1','p3'];
+  const heightLabels=['2nd','1st','3rd'];
+  const stage=document.getElementById('podiumStage');
+  stage.innerHTML=slots.map((p,i)=>{
+    if(!p)return'<div style="flex:1"></div>';
+    const initials=p.name.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return`<div class="podium-col">
+      <div class="podium-avatar ${classes[i]}-av" id="pav-${i}">${MEDALS[i===1?0:i===0?1:2]}</div>
+      <div class="podium-name">${esc(p.name)}</div>
+      <div class="podium-pts">${p.score} pts</div>
+      <div class="podium-block ${classes[i]}-block" id="pblock-${i}">${heightLabels[i]}</div>
+    </div>`;
+  }).join('');
+
+  // rest of leaderboard
+  const rest=lb.slice(3);
+  document.getElementById('podiumRestList').innerHTML=rest.length?
+    `<div style="font-size:0.78rem;color:#666;text-align:center;margin-bottom:8px">Other participants</div>`+
+    rest.map((p,i)=>`<div class="lb-row" style="padding:8px 12px">
+      <div class="lb-rank" style="font-size:0.9rem;color:#555">${i+4}</div>
+      <div class="lb-name" style="font-size:0.88rem">${esc(p.name)}</div>
+      <div class="lb-score" style="font-size:0.88rem">${p.score}</div>
+    </div>`).join(''):'';
+
+  showScreen('podium-screen');
+
+  // animate: blocks rise first, then avatars drop in
+  setTimeout(()=>{
+    [0,1,2].forEach(i=>{const b=document.getElementById('pblock-'+i);if(b)b.classList.add('show')});
+  },200);
+  setTimeout(()=>{
+    [0,1,2].forEach(i=>{const a=document.getElementById('pav-'+i);if(a)a.classList.add('show')});
+  },900);
+  setTimeout(()=>startConfetti(),1100);
+}
+
+// ── Confetti ──────────────────────────────────────────────
+let confettiAF;
+function startConfetti(){
+  const canvas=document.getElementById('confettiCanvas');
+  canvas.classList.remove('hidden');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const pieces=Array.from({length:120},()=>({
+    x:Math.random()*canvas.width,y:-20,
+    w:8+Math.random()*8,h:6+Math.random()*6,
+    r:Math.random()*Math.PI*2,
+    vx:(Math.random()-0.5)*4,vy:3+Math.random()*4,
+    vr:(Math.random()-0.5)*0.2,
+    color:['#f1c40f','#6c63ff','#3ecfcf','#e74c3c','#2ecc71','#e67e22'][Math.floor(Math.random()*6)],
+    life:1
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    frame++;
+    pieces.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;
+      if(frame>80)p.life=Math.max(0,p.life-0.012);
+      ctx.save();ctx.globalAlpha=p.life;ctx.translate(p.x,p.y);ctx.rotate(p.r);
+      ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+    });
+    if(pieces.some(p=>p.life>0))confettiAF=requestAnimationFrame(draw);
+    else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.classList.add('hidden')}
+  }
+  cancelAnimationFrame(confettiAF);draw();
+  setTimeout(()=>{pieces.forEach(p=>p.life=0)},4000);
+}
+
+// ── Trainee ───────────────────────────────────────────────
+function traineeJoin(){
+  const name=document.getElementById('traineeName').value.trim();
+  const code=document.getElementById('traineeCode').value.trim().toUpperCase();
+  document.getElementById('joinErr').textContent='';
+  if(!name){document.getElementById('joinErr').textContent='Please enter your name.';return}
+  if(code.length<4){document.getElementById('joinErr').textContent='Please enter a valid session code.';return}
+  S.trainee={name,code};
+  if(!participants[name])participants[name]={name,score:0,streak:0,answers:[],voteTimes:{}};
+  document.getElementById('tWaitName').textContent=name;
+  document.getElementById('tNameBadge').textContent=name;
+  updateJoinedList();
+  if(S.sessionActive&&S.sessionCode===code)showTraineeAnswer(S.currentQ);
+  else{
+    showScreen('trainee-waiting');
+    const chk=setInterval(()=>{
+      if(S.sessionActive&&S.sessionCode===code){clearInterval(chk);showTraineeAnswer(S.currentQ)}
+      else if(S.sessionDone){clearInterval(chk);showTraineeFinish()}
+    },500);
+  }
+}
+function updateTraineeHUD(name){
+  const p=participants[name];if(!p)return;
+  const rank=getTraineeRank(name);
+  document.getElementById('tHudScore').textContent=`${p.score} pts`;
+  document.getElementById('tHudRank').textContent=rank?`Rank #${rank} / ${Object.keys(participants).length}`:'Rank —';
+  document.getElementById('tHudStreak').textContent=p.streak>=2?`🔥 ${p.streak} streak!`:'';
+  renderDots(name,'tProgressDots');
+}
+function showTraineeAnswer(qIdx){
+  if(!S.sessionActivity||qIdx>=S.sessionActivity.questions.length){showTraineeFinish();return}
+  const q=S.sessionActivity.questions[qIdx];
+  S.tCurrentQ=qIdx;S.tQStartTime=Date.now();
+  document.getElementById('tQNum').textContent=`${qIdx+1} / ${S.sessionActivity.questions.length}`;
+  document.getElementById('tQText').textContent=q.text;
+  updateTraineeHUD(S.trainee.name);
+  // speed bar animation
+  clearInterval(S.tSpeedBarInt);
+  const bar=document.getElementById('tSpeedBar');
+  const lbl=document.getElementById('tSpeedLabel');
+  if(bar){bar.style.width='100%';bar.style.background='#27ae60'}
+  let elapsed=0;
+  S.tSpeedBarInt=setInterval(()=>{
+    elapsed+=0.1;
+    const ratio=Math.max(0,1-elapsed/q.timer);
+    const pct=Math.round(ratio*100);
+    if(bar){
+      bar.style.width=pct+'%';
+      bar.style.background=pct>60?'#27ae60':pct>30?'#f39c12':'#e74c3c';
+    }
+    const bonus=Math.round(MAX_SPEED_BONUS*ratio);
+    if(lbl)lbl.textContent=`+${bonus} speed bonus`;
+  },100);
+  const opts=document.getElementById('tOpts');opts.innerHTML='';
+  q.options.forEach((o,i)=>{
+    if(!o.trim())return;
+    const b=document.createElement('button');b.className='t-opt';b.style.background=COLORS[i];
+    b.textContent=`${LABELS[i]}: ${o}`;
+    b.onclick=()=>traineeSubmit(qIdx,i,opts);
+    opts.appendChild(b);
+  });
+  showScreen('trainee-answer');
+  const watch=setInterval(()=>{
+    if(S.tCurrentQ!==qIdx)return clearInterval(watch);
+    if(!S.sessionActive&&S.sessionDone){clearInterval(watch);showTraineeFinish()}
+    if(S.currentQ!==qIdx&&S.sessionActive){clearInterval(watch);showTraineeAnswer(S.currentQ)}
+  },500);
+}
+function showPtsPopup(text){
+  const el=document.getElementById('ptsPopup');
+  el.textContent=text;el.className='pts-popup show';
+  setTimeout(()=>{el.className='pts-popup hide'},1400);
+  setTimeout(()=>{el.className='pts-popup'},1800);
+}
+function traineeSubmit(qIdx,optIdx,opts){
+  const name=S.trainee.name;const p=participants[name];
+  if(!p||p.answers.length>qIdx)return;
+  clearInterval(S.tSpeedBarInt);
+  opts.querySelectorAll('.t-opt').forEach(b=>b.disabled=true);
+  if(!S.votes[name])S.votes[name]=optIdx;
+  const q=S.sessionActivity.questions[qIdx];
+  const correct=optIdx===q.correct;
+  const elapsed=(Date.now()-S.tQStartTime)/1000;
+  if(!p.voteTimes)p.voteTimes={};
+  p.voteTimes[qIdx]=elapsed;
+  let pts=0,speedPts=0,streakPts=0;
+  if(correct){
+    p.streak=(p.streak||0)+1;
+    speedPts=calcSpeedBonus(elapsed,q.timer);
+    streakPts=p.streak>=2?STREAK_BONUS:0;
+    pts=BASE_PTS+speedPts+streakPts;
+    p.score+=pts;
+  }else{p.streak=0}
+  p.answers.push({correct,points:pts,speedPts,streakPts,option:optIdx});
+  document.getElementById('tResIcon').textContent=correct?'✅':'❌';
+  document.getElementById('tResMsg').textContent=correct?'Correct!':'Not quite';
+  document.getElementById('tResCorrect').textContent=`Answer: ${LABELS[q.correct]} — ${q.options[q.correct]}`;
+  if(correct){
+    document.getElementById('tResPoints').textContent=`+${pts} pts`;
+    const parts=[];
+    parts.push(`${BASE_PTS} base`);
+    if(speedPts>0)parts.push(`+${speedPts} speed`);
+    if(streakPts>0)parts.push(`+${streakPts} streak`);
+    document.getElementById('tResBreakdown').textContent=parts.join(' · ');
+    showPtsPopup(`+${pts} pts`);
+  }else{
+    document.getElementById('tResPoints').textContent='+0 pts';
+    document.getElementById('tResBreakdown').textContent='';
+  }
+  renderLeaderboard('tResLbPreview',name,5);
+  showScreen('trainee-result');
+  const watch=setInterval(()=>{
+    if(S.currentQ>qIdx&&S.sessionActive){clearInterval(watch);showTraineeAnswer(S.currentQ)}
+    else if(S.sessionDone){clearInterval(watch);showTraineeFinish()}
+  },500);
+}
+function showTraineeFinish(){
+  const name=S.trainee.name;
+  const p=participants[name]||{score:0,streak:0,answers:[]};
+  const rank=getTraineeRank(name);const total=Object.keys(participants).length;
+  const correct=p.answers.filter(a=>a.correct).length;
+  document.getElementById('tFinalPts').textContent=p.score+' pts';
+  document.getElementById('tFinalRank').textContent=rank?`${rank<=3?MEDALS[rank-1]:''} Rank #${rank} of ${total}`:'';
+  document.getElementById('tFinalCorrect').textContent=`${correct} / ${(S.sessionActivity?.questions.length||0)} correct`;
+  document.getElementById('tAnswerHistory').innerHTML=p.answers.map((a,i)=>
+    `<span class="ah-pill ${a.correct?'ah-correct':'ah-wrong'}">Q${i+1} ${a.correct?'✓':'✗'}${a.correct&&a.speedPts>0?` +${a.speedPts}⚡`:''}</span>`
+  ).join('');
+  renderLeaderboard('tFinalLb',name,8);
+  showScreen('trainee-finish');
+}
+function traineeLeave(){S.trainee={name:'',code:''};S.tCurrentQ=-1;showScreen('trainee-home')}
+
+// ── Init ──────────────────────────────────────────────────
+const uP=new URLSearchParams(window.location.search);
+const jC=uP.get('join');
+if(jC){
+  S.mode='trainee';document.getElementById('viewToggle').textContent='Host View';
+  document.getElementById('traineeCode').value=jC.toUpperCase();showScreen('trainee-home');
+}else showScreen('host-home');
+</script>
+</body>
+</html>
